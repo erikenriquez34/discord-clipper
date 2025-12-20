@@ -1,5 +1,6 @@
 import cv2
-import os
+import numpy as np
+from blocks import split_into_blocks, merge_blocks
 
 #read convert grayscale, write new mp4
 def main():
@@ -33,15 +34,20 @@ def main():
             break
         #get gray intensity
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        #convert bgr
-        bgr = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
-        #write to output
+        #split into 8x8 numpy blocks and grayscale them
+        blocks, shape = split_into_blocks(gray)
+        #put them back together
+        reconstructed = merge_blocks(blocks, shape)
+        #put into BGR
+        bgr = cv2.cvtColor(reconstructed, cv2.COLOR_GRAY2BGR)
+        
         writer.write(bgr)
         frameCount += 1
 
     cap.release()
     writer.release()
 
+    #note we must re-encode with ffmpeg for discord compatability
     print(f"Wrote {frameCount} to {outputFile}")
 
 if __name__ == "__main__":
