@@ -3,7 +3,7 @@ import numpy as np
 from blocks import split_into_blocks, merge_blocks
 from transform import compress_block
 
-q = 20
+q = 10
 
 #read convert grayscale, write new mp4
 def main():
@@ -32,40 +32,35 @@ def main():
     frameCount = 0
     writtenFrames = 0
 
+    #main compression loop
     while True:
         ret, frame = cap.read()
         if not ret:
             break
 
-        #skip every other frame for performance
-        if frameCount % 2 != 0:
-            frameCount += 1
-            continue
-
         #downscale frame for performance
         frame = cv2.resize(frame, (320, 240))
 
-        #get gray intensity
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        #split each channel into 8x8 blocks, compress, and merge back
+        compressedChannels = []
 
-        #split into 8x8 numpy blocks and grayscale them
-        blocks, shape = split_into_blocks(gray)
+        for ch in range(3): #for each channel BGR
+            channel = frame[:, :, ch]
+            blocks, shape = split_into_blocks(channel)
 
-        #apply DCT + quantization compression to each block
-        compressedBlocks = []
-        for block in blocks:
-            compressed = compress_block(block, q)
-            compressedBlocks.append(compressed)
+            compressedBlocks = []
+            for block in blocks:
+                compressed = compress_block(block, q)
+                compressedBlocks.append(compressed)
 
-        #put them back together
-        reconstructed = merge_blocks(compressedBlocks, shape)
+            reconstructed = merge_blocks(compressedBlocks, shape)
+            compressedChannels.append(reconstructed)
 
-        #put into BGR
-        bgr = cv2.cvtColor(reconstructed, cv2.COLOR_GRAY2BGR)
+        #stack channels back into BGR frame
+        bgr = cv2.merge(compressedChannels)
 
         writer.write(bgr)
         writtenFrames += 1
-
         frameCount += 1
 
     #note we must re-encode with ffmpeg for discord compatability
