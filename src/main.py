@@ -1,4 +1,6 @@
 import cv2
+import sys
+import os
 import subprocess
 from blocks import split_into_blocks, merge_blocks
 from transform import compress_block
@@ -17,6 +19,7 @@ def main():
 
     #get metadata with cv2
     fps = cap.get(cv2.CAP_PROP_FPS)
+    totalFrames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     width, height = 320, 240
 
     #set up writer(bgr for discord compatability)
@@ -33,10 +36,15 @@ def main():
     writtenFrames = 0
 
     #main compression loop
+    print("Compressing...")
     while True:
         ret, frame = cap.read()
         if not ret:
             break
+
+        if frameCount % 60 == 0:
+            percent = (frameCount / totalFrames) * 100
+            print(f"Progress: {percent:.1f}%")
 
         #downscale frame for performance
         frame = cv2.resize(frame, (320, 240))
@@ -66,9 +74,6 @@ def main():
     cap.release()
     writer.release()
     
-    #note we must re-encode with ffmpeg for discord compatability
-    print(f"Complete! Wrote {frameCount} frames to {outputFile}")
-    
     #use ffmpeg to add audio to video
     subprocess.run([
         "ffmpeg", "-y",
@@ -80,6 +85,8 @@ def main():
         "-map", "1:a:0",
         "output.mp4"
     ])
+
+    print("Compressed video size:", os.path.getsize("output.mp4"), "bytes")
 
 if __name__ == "__main__":
     main()
