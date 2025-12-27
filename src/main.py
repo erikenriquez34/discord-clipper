@@ -1,7 +1,7 @@
 import cv2
-import sys
 import os
 import subprocess
+import shutil
 from blocks import split_into_blocks, merge_blocks
 from transform import compress_block
 
@@ -74,7 +74,16 @@ def main():
     cap.release()
     writer.release()
     
-    #use ffmpeg to add audio to video
+    mergeAudio(outputFile, inputFile)
+    print("\nCompressed video size:", os.path.getsize("output.mp4"), "bytes")
+
+#use ffmpeg to add audio to video
+def mergeAudio(outputFile, inputFile):
+    if shutil.which("ffmpeg") is None:
+        print("FFmpeg not found! Output will have no audio.")
+        shutil.copy(outputFile, "output.mp4")
+        return
+    
     subprocess.run([
         "ffmpeg", "-y",
         "-i", outputFile,
@@ -84,9 +93,7 @@ def main():
         "-map", "0:v:0",
         "-map", "1:a:0",
         "output.mp4"
-    ])
-
-    print("Compressed video size:", os.path.getsize("output.mp4"), "bytes")
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 if __name__ == "__main__":
     main()
