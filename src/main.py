@@ -2,13 +2,17 @@ import cv2
 import os
 import subprocess
 import shutil
+from pathlib import Path
 from blocks import split_into_blocks, merge_blocks
 from transform import compress_block
 
+#compression factor 
 q = 20
 
-#read convert grayscale, write new mp4
 def main():
+    #set temp path if not yet made
+    os.makedirs("temp", exist_ok=True)
+
     #set these to input paths later
     inputFile = "./rock.mp4"
     outputFile = "./temp/compressed.mp4"
@@ -74,15 +78,18 @@ def main():
     cap.release()
     writer.release()
     
-    mergeAudio(outputFile, inputFile)
-    print("\nCompressed video size:", os.path.getsize("output.mp4"), "bytes")
+    result = mergeAudio(outputFile, inputFile)
+    print("\nCompressed", result, "down to", os.path.getsize(result), "bytes")
 
 #use ffmpeg to add audio to video
 def mergeAudio(outputFile, inputFile):
+    inputPath = Path(inputFile)
+    result = (inputPath.stem + "_compressed" + inputPath.suffix)
+
     if shutil.which("ffmpeg") is None:
         print("FFmpeg not found! Output will have no audio.")
-        shutil.copy(outputFile, "output.mp4")
-        return
+        shutil.copy(outputFile, result)
+        return result
     
     subprocess.run([
         "ffmpeg", "-y",
@@ -92,8 +99,10 @@ def mergeAudio(outputFile, inputFile):
         "-c:a", "aac",
         "-map", "0:v:0",
         "-map", "1:a:0",
-        "output.mp4"
+        result
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    return result
 
 if __name__ == "__main__":
     main()
