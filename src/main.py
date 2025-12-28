@@ -91,16 +91,22 @@ def mergeAudio(outputFile, inputFile):
         shutil.copy(outputFile, result)
         return result
     
+    #tuned for discord uploads
     subprocess.run([
         "ffmpeg", "-y",
         "-i", outputFile,
         "-i", inputFile,
-        "-c:v", "copy",
+        "-c:v", "libx264",
+        "-preset", "fast",
+        "-pix_fmt", "yuv420p",
+        "-movflags", "+faststart",
         "-c:a", "aac",
         "-map", "0:v:0",
         "-map", "1:a:0",
+        "-shortest",
         result
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
 
     return result
 
