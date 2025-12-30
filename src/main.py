@@ -2,6 +2,7 @@ import cv2
 import os
 import subprocess
 import shutil
+import argparse
 from pathlib import Path
 from blocks import split_into_blocks, merge_blocks
 from transform import compress_block
@@ -9,17 +10,29 @@ from transform import compress_block
 #compression factor 
 q = 20
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Video compression project"
+    )
+    parser.add_argument(
+        "input",
+        type=str,
+        help="Path to input video file"
+    )
+    return parser.parse_args()
+
 def main():
     #set temp path if not yet made
     os.makedirs("temp", exist_ok=True)
+    args = parse_args()
 
-    #set these to input paths later
-    inputFile = "./rock.mp4"
+    #read input from args
+    inputFile = args.input
     outputFile = "./temp/compressed.mp4"
 
     cap = cv2.VideoCapture(inputFile)
     if not cap.isOpened():
-        raise RuntimeError("Failed to open input video")
+        raise RuntimeError("Failed to open input video:", inputFile)
 
     #get metadata with cv2
     fps = cap.get(cv2.CAP_PROP_FPS)
