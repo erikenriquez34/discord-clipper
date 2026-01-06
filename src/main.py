@@ -36,8 +36,11 @@ def main():
 
     #get metadata with cv2
     fps = cap.get(cv2.CAP_PROP_FPS)
+    width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    #for progress print statement
     totalFrames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    width, height = 320, 240
 
     #set up writer(bgr for discord compatability)
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -62,9 +65,6 @@ def main():
         if frameCount % 60 == 0:
             percent = (frameCount / totalFrames) * 100
             print(f"Progress: {percent:.1f}%")
-
-        #downscale frame for performance
-        frame = cv2.resize(frame, (320, 240))
 
         #split each channel into 8x8 blocks, compress, and merge back
         compressedChannels = []
@@ -119,7 +119,6 @@ def mergeAudio(outputFile, inputFile):
         "-shortest",
         result
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
 
     return result
 
