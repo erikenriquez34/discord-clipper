@@ -16,7 +16,7 @@ pool = Pool(processes=cpu_count())
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Video compression project"
+        description="Discord Clipper"
     )
     parser.add_argument(
         "input",
@@ -66,7 +66,7 @@ def main():
                 break
 
             if frameCount % 60 == 0:
-                percent = (frameCount / totalFrames) * 100
+                percent = min(100, (frameCount / totalFrames) * 100)
                 print(f"Progress: {percent:.1f}%")
 
             #split each channel into 8x8 blocks, compress, and merge back
