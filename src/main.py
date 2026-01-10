@@ -5,10 +5,14 @@ import shutil
 import argparse
 from pathlib import Path
 from blocks import split_into_blocks, merge_blocks
-from transform import compress_block
+from transform import compress_block_parallel
+from multiprocessing import Pool, cpu_count
 
-#compression factor 
-q = 20
+#low value is more compression, high value is more quality
+compressionFactor = 5
+
+#multiprocess workers
+pool = Pool(processes=cpu_count())
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -42,51 +46,47 @@ def main():
     #for progress print statement
     totalFrames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-    #set up writer(bgr for discord compatability)
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    #set up writer
     writer = cv2.VideoWriter(
         outputFile,
-        fourcc,
+        cv2.VideoWriter_fourcc(*'mp4v'),
         fps,
         (width, height),
         isColor=True
     )
 
     frameCount = 0
-    writtenFrames = 0
+    print("Compressing...")
 
     #main compression loop
-    print("Compressing...")
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
+    with Pool(processes=cpu_count()) as pool:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
 
-        if frameCount % 60 == 0:
-            percent = (frameCount / totalFrames) * 100
-            print(f"Progress: {percent:.1f}%")
+            if frameCount % 60 == 0:
+                percent = (frameCount / totalFrames) * 100
+                print(f"Progress: {percent:.1f}%")
 
-        #split each channel into 8x8 blocks, compress, and merge back
-        compressedChannels = []
+            #split each channel into 8x8 blocks, compress, and merge back
+            compressedChannels = []
 
-        for ch in range(3): #for each channel BGR
-            channel = frame[:, :, ch]
-            blocks, shape = split_into_blocks(channel)
+            for ch in range(3): #for each channel BGR
+                channel = frame[:, :, ch]
+                blocks, shape = split_into_blocks(channel)
 
-            compressedBlocks = []
-            for block in blocks:
-                compressed = compress_block(block, q)
-                compressedBlocks.append(compressed)
+                compressedBlocks = pool.map(
+                    compress_block_parallel, 
+                    [(block, compressionFactor) for block in blocks])
+                
+                reconstructed = merge_blocks(compressedBlocks, shape)
+                compressedChannels.append(reconstructed)
 
-            reconstructed = merge_blocks(compressedBlocks, shape)
-            compressedChannels.append(reconstructed)
-
-        #stack channels back into BGR frame
-        bgr = cv2.merge(compressedChannels)
-
-        writer.write(bgr)
-        writtenFrames += 1
-        frameCount += 1
+            #stack channels back into BGR frame
+            bgr = cv2.merge(compressedChannels)
+            writer.write(bgr)
+            frameCount += 1
 
     cap.release()
     writer.release()
