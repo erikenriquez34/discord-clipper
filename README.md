@@ -18,30 +18,24 @@ The product is a compressed video encoding, but it has no sound because OpenCV w
 Clone the repository
 
     git clone https://github.com/erikenriquez34/discord-clipper
-    
 Navigate to the project and install the project dependencies
 
     cd ./discord-clipper
-    
 Create a virtual environment
 
     python3 -m venv venv
     source venv/bin/activate
-
 Install Python dependencies
 
     pip install -r requirements.txt
-
 Install FFmpeg (recommended)
 
     sudo apt install ffmpeg
 # Usage
+Remember to be in the virtual environment
+
+    source venv/bin/activate
 Run the program by passing the input video file as an argument:
 
     python3 src/main.py input.mp4
-
 Output will be stored in a file with the same name, and _compressed added. So in the previous example, the output is `input_compressed.mp4`.
-
-
-
-
