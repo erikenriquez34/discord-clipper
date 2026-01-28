@@ -8,8 +8,7 @@ from blocks import split_into_blocks, merge_blocks
 from transform import compress_block_parallel
 from multiprocessing import Pool, cpu_count
 
-#low value is more compression, high value is more quality
-compressionFactor = 5
+quantization = 30
 framesSkipped = 2
 
 #multiprocess workers
@@ -86,7 +85,7 @@ def main():
 
                 compressedBlocks = pool.map(
                     compress_block_parallel, 
-                    [(block, compressionFactor) for block in blocks])
+                    [(block, quantization) for block in blocks])
                 
                 reconstructed = merge_blocks(compressedBlocks, shape)
                 compressedChannels.append(reconstructed)
@@ -114,20 +113,23 @@ def mergeAudio(outputFile, inputFile):
     
     #tuned for discord uploads
     subprocess.run([
-        "ffmpeg", "-y",
-        "-i", outputFile,
-        "-i", inputFile,
-        "-c:v", "libx264",
-        "-preset", "fast",
-        "-pix_fmt", "yuv420p",
-        "-movflags", "+faststart",
-        "-c:a", "aac",
-        "-map", "0:v:0",
-        "-map", "1:a:0",
-        "-shortest",
-        result
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
+    "ffmpeg", "-y",
+    "-i", outputFile,
+    "-i", inputFile,
+    "-c:v", "libx264",
+    "-crf", "28",
+    "-preset", "fast",
+    "-vf", "scale=854:480",
+    "-r", "30",
+    "-pix_fmt", "yuv420p",
+    "-movflags", "+faststart",
+    "-c:a", "aac",
+    "-map", "0:v:0",
+    "-map", "1:a:0",
+    "-shortest",
+    result
+], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
     return result
 
 if __name__ == "__main__":
