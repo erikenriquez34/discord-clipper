@@ -10,6 +10,7 @@ from multiprocessing import Pool, cpu_count
 
 #low value is more compression, high value is more quality
 compressionFactor = 5
+framesSkipped = 2
 
 #multiprocess workers
 pool = Pool(processes=cpu_count())
@@ -42,15 +43,16 @@ def main():
     fps = cap.get(cv2.CAP_PROP_FPS)
     width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-    #for progress print statement
     totalFrames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    #speed up by skipping frames
+    outputFPS = fps / framesSkipped
 
     #set up writer
     writer = cv2.VideoWriter(
         outputFile,
         cv2.VideoWriter_fourcc(*'mp4v'),
-        fps,
+        outputFPS,
         (width, height),
         isColor=True
     )
@@ -65,6 +67,12 @@ def main():
             if not ret:
                 break
 
+            #skip frames
+            if frameCount % framesSkipped != 0:
+                frameCount += 1
+                continue
+
+            #progress output
             if frameCount % 60 == 0:
                 percent = min(100, (frameCount / totalFrames) * 100)
                 print(f"Progress: {percent:.1f}%")
@@ -92,7 +100,7 @@ def main():
     writer.release()
     
     result = mergeAudio(outputFile, inputFile)
-    print("\nCompressed", result, "down to", os.path.getsize(result), "bytes")
+    print("\nComplete! Compressed", result, "down to", os.path.getsize(result), "bytes")
 
 #use ffmpeg to add audio to video
 def mergeAudio(outputFile, inputFile):
